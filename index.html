@@ -6,31 +6,106 @@
 <title>موقعي الشخصي</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 <style>
+/* عام */
 body {margin:0;font-family:tahoma;background:#fafafa;}
-.header, .nav {display:flex;justify-content:space-between;align-items:center;padding:10px;background:#fff;box-shadow:0 1px 5px rgba(0,0,0,0.1);}
+
+/* HEADER */
+.header {
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    padding:10px 12px;
+    background:#fff;
+    box-shadow:0 1px 5px rgba(0,0,0,0.1);
+    position:fixed;
+    top:0;
+    width:100%;
+    z-index:999;
+}
 .header .center {font-weight:bold;font-size:22px;color:#000;}
-.stories {display:flex;gap:10px;padding:10px;overflow-x:auto;background:#fff;}
-.story {text-align:center;font-size:12px;cursor:pointer;}
-.story img {width:50px;height:50px;border-radius:50%;border:2px solid #ed4956;object-fit:cover;}
-.post {background:#fff;max-width:450px;margin:15px auto;border-radius:10px;box-shadow:0 2px 8px rgba(0,0,0,.1);padding:10px;}
+.header i{font-size:22px;cursor:pointer;}
+
+/* STORIES */
+.stories {
+    display:flex;
+    gap:10px;
+    padding:70px 10px 10px 10px;
+    overflow-x:auto;
+    background:#fff;
+}
+.story{text-align:center;font-size:12px;cursor:pointer;}
+.story img{width:50px;height:50px;border-radius:50%;border:2px solid #ed4956;object-fit:cover;}
+
+/* POSTS */
+.post {
+    background:#fff;
+    max-width:500px;
+    margin:15px auto;
+    border-radius:10px;
+    box-shadow:0 2px 8px rgba(0,0,0,.1);
+    padding:10px;
+}
 .actions {display:flex;align-items:center;gap:10px;margin-top:5px;}
-.actions button{font-size:18px;background:none;border:none;cursor:pointer;}
-#newPostModal{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);justify-content:center;align-items:center;}
-#newPostModal form{background:#fff;padding:15px;border-radius:10px;width:90%;max-width:400px;display:flex;flex-direction:column;gap:8px;}
-#newPostModal textarea{height:80px;padding:6px;border-radius:6px;border:1px solid #ccc;}
-#newPostModal button{padding:8px;border:none;border-radius:6px;background:#0095f6;color:#fff;font-weight:bold;cursor:pointer;}
-.nav i {font-size:24px;color:#000;cursor:pointer;}
+.actions button{font-size:20px;background:none;border:none;cursor:pointer;}
+
+/* MODAL */
+#newPostModal {
+    display:none;
+    position:fixed;
+    top:0;left:0;width:100%;height:100%;
+    background:rgba(0,0,0,0.5);
+    justify-content:center;align-items:center;
+    z-index:1000;
+}
+#newPostModal form {
+    background:#fff;
+    padding:15px;
+    border-radius:10px;
+    width:90%;
+    max-width:400px;
+    display:flex;flex-direction:column;gap:8px;
+}
+#newPostModal textarea {
+    height:80px;padding:6px;border-radius:6px;border:1px solid #ccc;
+}
+#newPostModal button {
+    padding:8px;border:none;border-radius:6px;background:#0095f6;color:#fff;font-weight:bold;cursor:pointer;
+}
+
+/* NAV */
+.nav {
+    position:fixed;
+    bottom:0;
+    width:100%;
+    background:#fff;
+    border-top:1px solid #ddd;
+    display:flex;
+    justify-content:space-around;
+    align-items:center;
+    padding:8px 0;
+    z-index:999;
+}
+.nav i{font-size:28px;color:#000;cursor:pointer;}
+
+/* RESPONSIVE */
+@media (max-width:600px){
+    .header .center{font-size:18px;}
+    .story img{width:40px;height:40px;}
+    .post{margin:10px;max-width:95%;}
+    .actions button{font-size:18px;}
+}
 </style>
 </head>
 <body>
 
+<!-- HEADER -->
 <div class="header">
-    <div class="left"><i class="fas fa-plus" id="openPostModal"></i></div>
+    <i class="fas fa-plus" id="openPostModal"></i>
     <div class="center">AZZAM</div>
-    <div class="right"><i class="far fa-heart"></i></div>
+    <i class="far fa-heart"></i>
 </div>
 
-<!-- نموذج رفع منشور -->
+<!-- MODAL رفع منشور -->
 <div id="newPostModal">
     <form id="postForm">
         <textarea id="postText" placeholder="اكتب نص المنشور هنا..."></textarea>
@@ -38,19 +113,13 @@ body {margin:0;font-family:tahoma;background:#fafafa;}
     </form>
 </div>
 
-<!-- القصص -->
+<!-- STORIES -->
 <div class="stories" id="storiesContainer">
-    <div class="story">
-        <img src="https://via.placeholder.com/50">
-        <div>أحمد</div>
-    </div>
-    <div class="story">
-        <img src="https://via.placeholder.com/50">
-        <div>سارة</div>
-    </div>
+    <div class="story"><img src="https://via.placeholder.com/50"><div>أحمد</div></div>
+    <div class="story"><img src="https://via.placeholder.com/50"><div>سارة</div></div>
 </div>
 
-<!-- المنشورات -->
+<!-- POSTS -->
 <div id="postsContainer">
     <div class="post">
         <p>مرحباً، هذا منشور تجريبي!</p>
@@ -61,9 +130,9 @@ body {margin:0;font-family:tahoma;background:#fafafa;}
     </div>
 </div>
 
-<div style="height:50px;"></div>
+<div style="height:60px;"></div>
 
-<!-- شريط التنقل -->
+<!-- NAV -->
 <div class="nav">
     <i class="fas fa-home"></i>
     <i class="fas fa-video"></i>
@@ -82,7 +151,7 @@ window.onclick = e=>{ if(e.target==modal) modal.style.display='none'; }
 // إضافة منشور جديد
 document.getElementById('postForm').onsubmit = function(e){
     e.preventDefault();
-    const text = document.getElementById('postText').value;
+    const text = document.getElementById('postText').value.trim();
     if(!text) return;
     const postContainer = document.getElementById('postsContainer');
     const div = document.createElement('div');
