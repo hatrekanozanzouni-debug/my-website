@@ -3,107 +3,116 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>AZZAM</title>
+<title>موقعي الشخصي</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 <style>
-body { margin:0; font-family:tahoma; background:#fafafa; }
-.header{display:flex;justify-content:space-between;align-items:center;padding:10px 12px;background:#fff;border-bottom:1px solid #ddd;position:fixed;top:0;width:100%;z-index:999;box-sizing:border-box;}
-.header .center{font-family: 'Segoe Script', cursive, sans-serif;font-weight:bold;font-size:22px;color:#000;text-shadow: 1px 1px 2px #ccc;}
-.header .left i, .header .right i{cursor:pointer;font-size:22px;color:#000;margin:0 5px;}
-.stories{display:flex;gap:10px;padding:70px 10px 10px 10px;overflow-x:auto;background:#fff;}
-.story{text-align:center;font-size:12px;cursor:pointer;}
-.story img{width:50px;height:50px;border-radius:50%;border:2px solid #ed4956;object-fit:cover;}
-.story .username{cursor:pointer;color:#000;font-weight:bold;margin-top:4px;}
-.post{background:#fff;max-width:450px;margin:15px auto;border-radius:10px;box-shadow:0 2px 8px rgba(0,0,0,.1);position:relative;display:block;}
-.post img, .post video{width:100%;border-radius:6px;}
-.actions{display:flex;align-items:center;gap:15px;padding:10px;}
-.actions button{font-size:24px;background:none;border:none;cursor:pointer}
-.nav{position:fixed;bottom:0;width:100%;background:#fff;border-top:1px solid #ddd;display:flex;justify-content:space-around;align-items:center;padding:8px 0;z-index:9999;}
-.nav i, .nav img{width:28px;height:28px;object-fit:cover;font-size:28px;color:#000;cursor:pointer;}
-.nav img{border-radius:50%;border:1px solid #ccc;}
-#newPostModal{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);justify-content:center;align-items:center;z-index:10000;}
-#newPostModal form{background:#fff;padding:15px;border-radius:10px;max-width:400px;width:90%;display:flex;flex-direction:column;gap:8px;}
-#newPostModal textarea{resize:none;height:80px;padding:6px;border-radius:6px;border:1px solid #ccc;}
+body {margin:0;font-family:tahoma;background:#fafafa;}
+.header, .nav {display:flex;justify-content:space-between;align-items:center;padding:10px;background:#fff;box-shadow:0 1px 5px rgba(0,0,0,0.1);}
+.header .center {font-weight:bold;font-size:22px;color:#000;}
+.stories {display:flex;gap:10px;padding:10px;overflow-x:auto;background:#fff;}
+.story {text-align:center;font-size:12px;cursor:pointer;}
+.story img {width:50px;height:50px;border-radius:50%;border:2px solid #ed4956;object-fit:cover;}
+.post {background:#fff;max-width:450px;margin:15px auto;border-radius:10px;box-shadow:0 2px 8px rgba(0,0,0,.1);padding:10px;}
+.actions {display:flex;align-items:center;gap:10px;margin-top:5px;}
+.actions button{font-size:18px;background:none;border:none;cursor:pointer;}
+#newPostModal{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);justify-content:center;align-items:center;}
+#newPostModal form{background:#fff;padding:15px;border-radius:10px;width:90%;max-width:400px;display:flex;flex-direction:column;gap:8px;}
+#newPostModal textarea{height:80px;padding:6px;border-radius:6px;border:1px solid #ccc;}
 #newPostModal button{padding:8px;border:none;border-radius:6px;background:#0095f6;color:#fff;font-weight:bold;cursor:pointer;}
-#newPostModal .closeBtn{align-self:flex-end;cursor:pointer;font-weight:bold;}
+.nav i {font-size:24px;color:#000;cursor:pointer;}
 </style>
 </head>
 <body>
 
-<!-- HEADER -->
 <div class="header">
     <div class="left"><i class="fas fa-plus" id="openPostModal"></i></div>
     <div class="center">AZZAM</div>
-    <div class="right"><i class="far fa-heart"></i><span class="notification"></span></div>
-</div>
-
-<!-- STORIES -->
-<div class="stories">
-    <div class="story">
-        <img src="https://via.placeholder.com/50">
-        <div class="username">User1</div>
-    </div>
-    <div class="story">
-        <img src="https://via.placeholder.com/50">
-        <div class="username">User2</div>
-    </div>
-</div>
-
-<!-- POSTS -->
-<div class="post">
-    <div class="userInfo">
-        <img src="https://via.placeholder.com/32">
-        <b>User1</b>
-        <i class="fas fa-check-circle"></i>
-    </div>
-    <img src="https://via.placeholder.com/400x250">
-    <div class="actions">
-        <button class="likeBtn"><i class="far fa-heart"></i></button><span>0</span>
-        <button class="commentBtn"><i class="far fa-comment"></i></button><span>0</span>
-        <button class="shareBtn"><i class="fas fa-paper-plane"></i></button>
-    </div>
+    <div class="right"><i class="far fa-heart"></i></div>
 </div>
 
 <!-- نموذج رفع منشور -->
 <div id="newPostModal">
-    <form>
-        <div class="closeBtn" id="closePostModal">X</div>
-        <textarea placeholder="اكتب نص المنشور هنا..."></textarea>
-        <input type="file" accept="image/*,video/*">
+    <form id="postForm">
+        <textarea id="postText" placeholder="اكتب نص المنشور هنا..."></textarea>
         <button type="submit">نشر</button>
     </form>
 </div>
 
-<!-- NAV -->
+<!-- القصص -->
+<div class="stories" id="storiesContainer">
+    <div class="story">
+        <img src="https://via.placeholder.com/50">
+        <div>أحمد</div>
+    </div>
+    <div class="story">
+        <img src="https://via.placeholder.com/50">
+        <div>سارة</div>
+    </div>
+</div>
+
+<!-- المنشورات -->
+<div id="postsContainer">
+    <div class="post">
+        <p>مرحباً، هذا منشور تجريبي!</p>
+        <div class="actions">
+            <button class="likeBtn"><i class="far fa-heart"></i></button><span>0</span>
+            <button class="commentBtn"><i class="far fa-comment"></i></button><span>0</span>
+        </div>
+    </div>
+</div>
+
+<div style="height:50px;"></div>
+
+<!-- شريط التنقل -->
 <div class="nav">
     <i class="fas fa-home"></i>
     <i class="fas fa-video"></i>
     <i class="far fa-paper-plane"></i>
     <i class="fas fa-search"></i>
-    <img src="https://via.placeholder.com/28">
+    <i class="fas fa-user"></i>
 </div>
 
 <script>
 // فتح/إغلاق نموذج رفع منشور
 const openModal = document.getElementById('openPostModal');
-const closeModal = document.getElementById('closePostModal');
 const modal = document.getElementById('newPostModal');
 openModal.onclick = ()=> modal.style.display='flex';
-closeModal.onclick = ()=> modal.style.display='none';
 window.onclick = e=>{ if(e.target==modal) modal.style.display='none'; }
 
-// LIKE
-document.querySelectorAll('.likeBtn').forEach(b=>{
-    b.onclick=()=>{
-        let i=b.querySelector('i');
-        let c=b.nextElementSibling;
-        if(i.classList.contains('far')){
-            i.className='fas fa-heart'; i.style.color='#ed4956'; c.textContent=Number(c.textContent)+1;
-        } else {
-            i.className='far fa-heart'; i.style.color=''; c.textContent=Number(c.textContent)-1;
-        }
+// إضافة منشور جديد
+document.getElementById('postForm').onsubmit = function(e){
+    e.preventDefault();
+    const text = document.getElementById('postText').value;
+    if(!text) return;
+    const postContainer = document.getElementById('postsContainer');
+    const div = document.createElement('div');
+    div.className='post';
+    div.innerHTML = `<p>${text}</p>
+        <div class="actions">
+            <button class="likeBtn"><i class="far fa-heart"></i></button><span>0</span>
+            <button class="commentBtn"><i class="far fa-comment"></i></button><span>0</span>
+        </div>`;
+    postContainer.prepend(div);
+    modal.style.display='none';
+    document.getElementById('postText').value='';
+    attachPostEvents(div);
+}
+
+// وظائف Like و Comment
+function attachPostEvents(post){
+    post.querySelector('.likeBtn').onclick = function(){
+        const i = this.querySelector('i');
+        const span = this.nextElementSibling;
+        if(i.classList.contains('far')){i.className='fas fa-heart';span.textContent++;}
+        else{i.className='far fa-heart';span.textContent--;}
     }
-});
+    post.querySelector('.commentBtn').onclick = function(){
+        alert('خاصية التعليقات مؤقتة!');
+    }
+}
+
+// تفعيل المنشورات الموجودة
+document.querySelectorAll('.post').forEach(attachPostEvents);
 </script>
 
 </body>
