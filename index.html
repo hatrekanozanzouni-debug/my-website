@@ -1,10 +1,602 @@
+<?php
+ini_set('display_errors',1);
+ini_set('display_startup_errors',1);
+error_reporting(E_ALL);
+session_start();
+include('config.php');
+
+if(!isset($_SESSION['user_id'])){
+    header("Location: login.php");
+    exit();
+}
+
+$user_id = $_SESSION['user_id'];
+
+/* القصص */
+$stories = $conn->query("
+    SELECT stories.id, stories.image, stories.user_id, users.username, users.avatar
+    FROM stories
+    JOIN users ON stories.user_id = users.id
+    ORDER BY stories.created_at DESC
+");
+
+/* المنشورات */
+$posts = $conn->query("
+    SELECT posts.*, users.username, users.avatar, users.id as post_user_id
+    FROM posts
+    JOIN users ON posts.user_id = users.id
+    ORDER BY posts.created_at DESC
+");
+
+/* صورة المستخدم */
+$me = $conn->query("SELECT avatar FROM users WHERE id=$user_id")->fetch_assoc();
+$myAvatar = $me['avatar'] ? 'avatars/'.$me['avatar'] : 'https://via.placeholder.com/32';
+?>
 <!DOCTYPE html>
-<html>
+<html lang="ar">
 <head>
-    <title>موقعي الأول</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AZZAM</title>
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+<style>
+html, body{height:100%; overscroll-behavior: none;}
+body{margin:0;font-family:tahoma;background:#fafafa}
+
+/* HEADER */
+.header{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    padding:10px 12px;
+    background:#fff;
+    border-bottom:1px solid #ddd;
+    position:fixed;
+    top:0;
+    width:100%;
+    z-index:999;
+    box-sizing:border-box;
+}
+.header .center{
+    font-family: 'Segoe Script', cursive, sans-serif;
+    font-weight:bold;
+    font-size:22px;
+    letter-spacing:1px;
+    color:#000;
+    text-shadow: 1px 1px 2px #ccc;
+}
+.header .left, .header .right{
+    display:flex;
+    align-items:center;
+}
+.header .left i, .header .right i{
+    cursor:pointer;
+    font-size:22px;
+    color:#000;
+    position:relative;
+    margin:0 5px;
+}
+.header .right{
+    position:relative;
+}
+.header .right .notification{
+    position:absolute;
+    top:0px;
+    right:0px;
+    width:8px;
+    height:8px;
+    background:red;
+    border-radius:50%;
+}
+
+/* STORIES */
+.stories{
+    display:flex;
+    gap:10px;
+    padding:70px 10px 10px 10px;
+    overflow-x:auto;
+    background:#fff;
+}
+.story{text-align:center;font-size:12px;cursor:pointer}
+.story img{width:50px;height:50px;border-radius:50%;border:2px solid #ed4956;object-fit:cover}
+.story .username{cursor:pointer;color:#000;font-weight:bold;margin-top:4px}
+
+/* STORY MODAL */
+#storyModal{
+    display:none;
+    position:fixed;
+    top:0;left:0;width:100%;height:100%;
+    background:rgba(0,0,0,0.85);
+    justify-content:center;
+    align-items:center;
+    z-index:10000;
+}
+#storyModal img{
+    max-width:90%;
+    max-height:80%;
+    border-radius:10px;
+}
+/* شريط تقدم القصة */
+#storyProgressContainer{
+    position:absolute;
+    top:0; left:0;
+    width:100%;
+    height:4px;
+    background:rgba(255,255,255,0.3);
+}
+#storyProgressBar{
+    width:0%;
+    height:100%;
+    background:#fff;
+}
+
+/* POST */
+.post{
+    background:#fff;
+    max-width:450px;
+    margin:15px auto;
+    border-radius:10px;
+    box-shadow:0 2px 8px rgba(0,0,0,.1);
+    position:relative;
+    display:none; /* سيتم التحكم بعرضها بالـ JS */
+}
+.post img, .post video, .post iframe{width:100%;border-radius:6px}
+
+/* USER INFO ABOVE MEDIA */
+.post .userInfo{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    position:absolute;
+    top:10px;
+    left:10px;
+    background:rgba(255,255,255,0.85);
+    padding:4px 8px;
+    border-radius:20px;
+    z-index:10;
+    cursor:pointer;
+}
+.post .userInfo img{
+    width:32px;
+    height:32px;
+    border-radius:50%;
+    object-fit:cover;
+}
+.post .userInfo b{font-weight:bold}
+.post .userInfo i{color:#1877f2;font-size:14px;margin-left:2px}
+
+/* FOLLOW / MORE BUTTONS */
+.post .userActions{
+    position:absolute;
+    top:10px;
+    right:10px;
+    display:flex;
+    flex-direction:column;
+    gap:6px;
+    z-index:11;
+}
+.post .userActions button{
+    background:#fff;
+    border:none;
+    border-radius:20px;
+    padding:4px 8px;
+    font-size:12px;
+    cursor:pointer;
+    box-shadow:0 1px 4px rgba(0,0,0,0.2);
+}
+.post .moreOptions{
+    display:none;
+    flex-direction:column;
+    gap:4px;
+    margin-top:4px;
+}
+.post .moreOptions button{
+    font-size:12px;
+    padding:4px 6px;
+}
+
+/* ACTIONS */
+.actions{
+    display:flex;
+    align-items:center;
+    gap:15px;
+    padding:10px;
+}
+.actions button{font-size:24px;background:none;border:none;cursor:pointer}
+.actions span{font-size:14px}
+
+/* COMMENTS */
+.comments{display:none;padding:0 10px}
+.comment{display:flex;gap:6px;margin-bottom:6px}
+.comment img{width:28px;height:28px;border-radius:50%}
+
+.commentForm{display:flex;padding:10px;gap:5px}
+.commentForm input{flex:1;padding:6px;border-radius:20px;border:1px solid #ccc}
+.commentForm button{background:#0095f6;color:#fff;border:none;border-radius:20px;padding:6px 12px}
+
+/* NAV */
+.nav{
+    position:fixed;
+    bottom:0;
+    width:100%;
+    background:#fff;
+    border-top:1px solid #ddd;
+    display:flex;
+    justify-content:space-around;
+    align-items:center;
+    padding:8px 0;
+    z-index:9999;
+}
+.nav i, .nav img{
+    width:28px;
+    height:28px;
+    object-fit:cover;
+    font-size:28px;
+    color:#000;
+    cursor:pointer;
+}
+.nav img{
+    border-radius:50%;
+    border:1px solid #ccc;
+}
+
+/* ADD STORY */
+.add-story .plus{
+    width:50px;height:50px;border-radius:50%;
+    border:2px dashed #1877f2;
+    display:flex;align-items:center;justify-content:center;
+    font-size:28px;color:#1877f2;background:#f0f2f5;
+}
+
+/* نموذج رفع منشور */
+#newPostModal{
+    display:none;
+    position:fixed;
+    top:0;left:0;width:100%;height:100%;
+    background:rgba(0,0,0,0.5);
+    justify-content:center;
+    align-items:center;
+    z-index:10000;
+}
+#newPostModal form{
+    background:#fff;
+    padding:15px;
+    border-radius:10px;
+    max-width:400px;
+    width:90%;
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+}
+#newPostModal input, #newPostModal textarea{
+    padding:6px;border-radius:6px;border:1px solid #ccc;
+}
+#newPostModal textarea{
+    resize:none;height:80px;
+}
+#newPostModal button{
+    padding:8px;border:none;border-radius:6px;
+    background:#0095f6;color:#fff;font-weight:bold;cursor:pointer;
+}
+#newPostModal .closeBtn{
+    align-self:flex-end;cursor:pointer;font-weight:bold;
+}
+
+/* زر عرض المزيد */
+#loadMoreBtn{
+    display:block;
+    margin:10px auto;
+    padding:10px 20px;
+    background:#0095f6;
+    color:#fff;
+    border:none;
+    border-radius:6px;
+    cursor:pointer;
+}
+</style>
 </head>
 <body>
-    <h1>🔥 أهلاً بك في موقعي</h1>
-    <p>هذا أول موقع لي على Render</p>
+
+<!-- HEADER -->
+<div class="header">
+    <div class="left">
+        <i class="fas fa-plus" id="openPostModal"></i>
+    </div>
+    <div class="center">AZZAM</div>
+    <div class="right">
+        <i class="far fa-heart"></i>
+        <span class="notification"></span>
+    </div>
+</div>
+
+<!-- نموذج رفع منشور -->
+<div id="newPostModal">
+    <form action="add_post.php" method="post" enctype="multipart/form-data">
+        <div class="closeBtn" id="closePostModal">X</div>
+        <textarea name="post_text" placeholder="اكتب نص المنشور هنا..."></textarea>
+        <input type="file" name="post_image" accept="image/*,video/*">
+        <input type="text" name="video_streamable" placeholder="رابط الفيديو من Streamable">
+        <button type="submit">نشر</button>
+    </form>
+</div>
+
+<!-- STORY MODAL -->
+<div id="storyModal">
+    <div id="storyProgressContainer">
+        <div id="storyProgressBar"></div>
+    </div>
+    <img src="" id="storyModalImg">
+</div>
+
+<!-- STORIES -->
+<div class="stories" id="storiesContainer">
+    <div class="story add-story" id="addStoryBtn">
+        <div class="plus">+</div>
+        <div>قصتك</div>
+    </div>
+
+    <form id="storyForm" action="add_story.php" method="post" enctype="multipart/form-data" style="display:none">
+        <input type="file" name="story_image" id="storyInput" accept="image/*">
+    </form>
+
+    <?php while($s=$stories->fetch_assoc()): ?>
+        <div class="story" data-image="<?= $s['image'] ? 'stories/'.$s['image'] : ($s['avatar']?'avatars/'.$s['avatar']:'https://via.placeholder.com/50') ?>" data-user="<?= $s['user_id'] ?>">
+            <img src="<?= $s['image'] ? 'stories/'.$s['image'] : ($s['avatar']?'avatars/'.$s['avatar']:'https://via.placeholder.com/50') ?>">
+            <div class="username" data-user="<?= $s['user_id'] ?>"><?= htmlspecialchars($s['username']) ?></div>
+        </div>
+    <?php endwhile; ?>
+</div>
+
+<!-- POSTS -->
+<?php 
+$postsArray = [];
+while($p=$posts->fetch_assoc()){
+    $postsArray[] = $p;
+}
+?>
+<?php foreach($postsArray as $index => $p):
+$post_id = $p['id'];
+$likes = $conn->query("SELECT COUNT(*) c FROM likes WHERE post_id=$post_id")->fetch_assoc()['c'];
+$isLiked = $conn->query("SELECT id FROM likes WHERE post_id=$post_id AND user_id=$user_id")->num_rows;
+$commentsCount = $conn->query("SELECT COUNT(*) c FROM comments WHERE post_id=$post_id")->fetch_assoc()['c'];
+?>
+<div class="post" <?php if($index<6) echo 'style="display:block"'; ?>>
+<?php
+if(!empty($p['video_streamable'])): ?>
+    <iframe src="<?= htmlspecialchars(str_replace("https://streamable.com/","https://streamable.com/e/",$p['video_streamable'])) ?>" 
+            width="100%" 
+            height="300" 
+            frameborder="0" 
+            scrolling="no" 
+            allowfullscreen>
+    </iframe>
+<?php
+else:
+    $filePath = 'uploads/' . $p['image'];
+    $ext = strtolower(pathinfo($p['image'], PATHINFO_EXTENSION));
+
+    if(file_exists($filePath) && in_array($ext, ['mp4','webm','ogg'])): ?>
+        <video controls preload="auto" playsinline width="100%"><source src="<?= $filePath ?>">متصفحك لا يدعم عرض الفيديو.</video>
+    <?php elseif(file_exists($filePath)): ?>
+        <img src="<?= $filePath ?>">
+    <?php else: ?>
+        <p>الملف غير موجود</p>
+    <?php endif;
+endif;
+?>
+<div class="userInfo" data-user="<?= $p['post_user_id'] ?>">
+    <img src="<?= $p['avatar'] ? 'avatars/'.$p['avatar'] : 'https://via.placeholder.com/32' ?>">
+    <b><?= htmlspecialchars($p['username']) ?></b>
+    <i class="fas fa-check-circle"></i>
+</div>
+<div class="userActions">
+    <button class="followBtn">Follow</button>
+    <button class="moreBtn">⋮</button>
+    <div class="moreOptions">
+        <button>Edit</button>
+        <button>Delete</button>
+    </div>
+</div>
+<?php if(!empty($p['text'])): ?>
+    <p style="padding:10px"><?= htmlspecialchars($p['text']) ?></p>
+<?php endif; ?>
+<div class="actions">
+    <button class="likeBtn" data-id="<?= $post_id ?>">
+        <i class="<?= $isLiked?'fas':'far' ?> fa-heart" style="<?= $isLiked?'color:#ed4956':'' ?>"></i>
+    </button>
+    <span class="likesCount"><?= $likes ?></span>
+
+    <button class="commentBtn" data-id="<?= $post_id ?>">
+        <i class="far fa-comment"></i>
+    </button>
+    <span><?= $commentsCount ?></span>
+
+    <button class="shareBtn" data-id="<?= $post_id ?>">
+        <i class="fas fa-paper-plane"></i>
+    </button>
+
+    <button class="saveBtn" data-id="<?= $post_id ?>" style="margin-right:auto">
+        <i class="far fa-bookmark"></i>
+    </button>
+</div>
+
+<div class="comments" data-post="<?= $post_id ?>"></div>
+
+<form class="commentForm" data-id="<?= $post_id ?>">
+    <input type="text" name="comment" placeholder="أضف تعليق..." required>
+    <button>نشر</button>
+</form>
+</div>
+<?php endforeach; ?>
+
+<!-- زر عرض المزيد -->
+<button id="loadMoreBtn">عرض المزيد</button>
+
+<div style="height:80px"></div>
+
+<!-- NAV -->
+<div class="nav">
+    <i class="fas fa-home"></i>
+    <i class="fas fa-video"></i>
+    <i class="far fa-paper-plane"></i>
+    <i class="fas fa-search"></i>
+    <img src="<?= $myAvatar ?>">
+</div>
+
+<script>
+// فتح/إغلاق نموذج رفع منشور
+const openModal = document.getElementById('openPostModal');
+const closeModal = document.getElementById('closePostModal');
+const modal = document.getElementById('newPostModal');
+openModal.onclick = ()=> modal.style.display='flex';
+closeModal.onclick = ()=> modal.style.display='none';
+window.onclick = e=>{ if(e.target==modal) modal.style.display='none'; }
+
+// LIKE
+document.querySelectorAll('.likeBtn').forEach(b=>{
+    b.onclick=()=>{fetch('like.php',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:'post_id='+b.dataset.id})
+    .then(r=>r.text()).then(res=>{
+        let i=b.querySelector('i');
+        let c=b.nextElementSibling;
+        if(res=='liked'){i.className='fas fa-heart';i.style.color='#ed4956';c.textContent++;}else{i.className='far fa-heart';i.style.color='';c.textContent--;}
+    });}
+});
+
+// COMMENTS
+document.querySelectorAll('.commentBtn').forEach(b=>{
+    b.onclick=()=>{
+        let id=b.dataset.id;
+        let box=document.querySelector('.comments[data-post="'+id+'"]');
+        let form=document.querySelector('.commentForm[data-id="'+id+'"]');
+
+        if(box.style.display=='block'){box.style.display='none';form.style.display='none';return;}
+
+        box.style.display='block';
+        form.style.display='flex';
+        box.innerHTML='جاري التحميل...';
+
+        fetch('comment.php?post_id='+id)
+        .then(r=>r.text()).then(html=>box.innerHTML=html);
+    }
+});
+
+// ADD COMMENT
+document.querySelectorAll('.commentForm').forEach(f=>{
+    f.onsubmit=e=>{
+        e.preventDefault();
+        let id=f.dataset.id;
+        let data=new FormData(f);
+        data.append('post_id',id);
+        fetch('comment.php',{method:'POST',body:data})
+        .then(r=>r.json()).then(res=>{
+            if(res.success){
+                document.querySelector('.comments[data-post="'+id+'"]').innerHTML+=
+                `<div class="comment"><img src="${res.avatar}"><b>${res.username}</b> ${res.comment}</div>`;
+                f.reset();
+            }
+        });
+    }
+});
+
+// FOLLOW / UNFOLLOW
+document.querySelectorAll('.followBtn').forEach(btn=>{
+    btn.onclick=()=>{ btn.textContent = (btn.textContent==='Follow') ? 'Unfollow' : 'Follow'; }
+});
+
+// MORE OPTIONS
+document.querySelectorAll('.moreBtn').forEach(btn=>{
+    btn.onclick=()=>{ let options=btn.nextElementSibling; options.style.display=(options.style.display==='flex')?'none':'flex'; }
+});
+
+// STORIES OPEN عند الضغط على الصورة فقط مع شريط تقدم 12 ثانية
+let storyTimer;
+let progressInterval;
+
+document.querySelectorAll('.story img').forEach(s=>{
+    s.onclick=()=>{
+        let src = s.src;
+        let modal = document.getElementById('storyModal');
+        let img = document.getElementById('storyModalImg');
+        let progressBar = document.getElementById('storyProgressBar');
+        img.src = src;
+        modal.style.display='flex';
+        progressBar.style.width = '0%';
+        if(storyTimer) clearTimeout(storyTimer);
+        if(progressInterval) clearInterval(progressInterval);
+        let duration = 12000;
+        let startTime = Date.now();
+        progressInterval = setInterval(()=>{
+            let elapsed = Date.now() - startTime;
+            let percent = Math.min((elapsed / duration) * 100, 100);
+            progressBar.style.width = percent + '%';
+        }, 30);
+        storyTimer = setTimeout(()=>{
+            modal.style.display='none';
+            clearInterval(progressInterval);
+        }, duration);
+    }
+});
+
+document.getElementById('storyModal').onclick = function(){
+    this.style.display='none';
+    if(storyTimer) clearTimeout(storyTimer);
+    if(progressInterval) clearInterval(progressInterval);
+}
+
+// الضغط على اسم القصة يذهب للملف الشخصي
+document.querySelectorAll('.story .username').forEach(u=>{
+    u.onclick=()=>{ let user_id = u.dataset.user; window.location.href='profile.php?user_id='+user_id; }
+});
+
+// POSTS USER INFO CLICK
+document.querySelectorAll('.userInfo').forEach(u=>{
+    u.onclick=()=>{ let user_id=u.dataset.user; window.location.href='profile.php?user_id='+user_id; }
+});
+
+// ADD STORY
+const addStoryBtn = document.getElementById('addStoryBtn');
+const storyInput = document.getElementById('storyInput');
+addStoryBtn.onclick = ()=> storyInput.click();
+
+storyInput.onchange = function(){
+    let file = this.files[0];
+    if(!file) return;
+
+    let formData = new FormData();
+    formData.append('story_image', file);
+
+    fetch('add_story.php',{
+        method:'POST',
+        body:formData
+    }).then(r=>r.json()).then(res=>{
+        if(res.success){
+            let container = document.getElementById('storiesContainer');
+            let div = document.createElement('div');
+            div.className = 'story';
+            div.dataset.user = res.user_id;
+            div.dataset.image = res.image;
+            div.innerHTML = `<img src="stories/${res.image}"><div class="username" data-user="${res.user_id}">${res.username}</div>`;
+            container.appendChild(div);
+        }
+    });
+}
+
+// عرض المزيد تدريجيًا 6 منشورات
+const posts = document.querySelectorAll('.post');
+let visibleCount = 6;
+document.getElementById('loadMoreBtn').onclick = function(){
+    let nextCount = visibleCount + 6;
+    for(let i=visibleCount; i<nextCount && i<posts.length; i++){
+        posts[i].style.display='block';
+    }
+    visibleCount = nextCount;
+    if(visibleCount >= posts.length){
+        this.style.display='none';
+    }
+}
+</script>
+
 </body>
 </html>
